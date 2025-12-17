@@ -17,6 +17,7 @@ defmodule ElixirTodoListWeb.Router do
   scope "/", ElixirTodoListWeb do
   pipe_through :browser
   live "/", TodoLive, :index
+  live "/tasks", TaskLive
 end
 
 

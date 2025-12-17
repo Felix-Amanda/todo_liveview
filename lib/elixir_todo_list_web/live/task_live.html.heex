@@ -1,0 +1,31 @@
+<h1>Lista de Tarefas</h1>
+
+<form phx-submit="save">
+  <input
+    type="text"
+    name="task[title]"
+    value={@changeset.data.title}
+    placeholder="Nova tarefa"
+    autofocus
+  />
+  <button type="submit">Adicionar</button>
+
+  <%= if @changeset.action do %>
+    <%= for {msg, _opts} <- Keyword.get_values(@changeset.errors, :title) do %>
+      <p style="color:red; margin: 4px 0;"><%= msg %></p>
+    <% end %>
+  <% end %>
+</form>
+
+<ul>
+  <%= for task <- @tasks do %>
+    <li style="margin: 4px 0;">
+      <%= task.title %>
+<%= if task.completed do %>
+  - <span style="color: green;">Concluída</span>
+<% end %>
+
+    </li>
+  <% end %>
+</ul>
+
