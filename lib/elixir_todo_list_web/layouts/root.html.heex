@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Elixir Todo List</title>
+    <%= Phoenix.HTML.Tag.tag(:link, rel: "stylesheet", href: Routes.static_path(@conn, "/assets/app.css")) %>
+    <%= csrf_meta_tag() %>
+  </head>
+  <body data-theme="cupcake" class="min-h-screen bg-base-200 text-base-content">
+    <%= @inner_content %>
+    <script type="text/javascript" src={Routes.static_path(@conn, "/assets/app.js")}></script>
+  </body>
+</html>
+

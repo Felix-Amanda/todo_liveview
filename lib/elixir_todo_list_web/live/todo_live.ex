@@ -5,7 +5,7 @@ defmodule ElixirTodoListWeb.TodoLive do
   alias ElixirTodoList.Tasks.Task
 
   # ---------------------------
-  # Estado inicial do LiveView
+  # mount/3
   # ---------------------------
   @impl true
   def mount(_params, _session, socket) do
@@ -21,25 +21,92 @@ defmodule ElixirTodoListWeb.TodoLive do
   end
 
   # ---------------------------
-  # Evento disparado a cada digitação
+  # render/1
+  # ---------------------------
+  @impl true
+  def render(assigns) do
+    ~H"""
+    <div class="w-full max-w-lg mx-auto mt-12 p-6 bg-white rounded-lg shadow-md">
+      <h1 class="text-3xl font-bold mb-6 text-center text-gray-800">
+        Minha Lista de Tarefas (com DB!)
+      </h1>
+
+      <!-- Formulário -->
+      <form phx-submit="save_task" phx-change="update_form" class="flex gap-2 mb-4">
+        <input
+          type="text"
+          name="title"
+          value={@new_task_title}
+          placeholder="O que precisa ser feito?"
+          class="input input-bordered input-primary flex-grow"
+          autofocus
+        />
+        <button type="submit" class="btn btn-primary">Adicionar</button>
+      </form>
+
+      <!-- Mensagens -->
+      <%= if @error_message do %>
+        <div class="alert alert-error mb-2 shadow-lg">
+          <span><%= @error_message %></span>
+        </div>
+      <% end %>
+
+      <%= if @info_message do %>
+        <div class="alert alert-success mb-2 shadow-lg">
+          <span><%= @info_message %></span>
+        </div>
+      <% end %>
+
+      <!-- Lista de tarefas -->
+      <ul class="space-y-2">
+        <li :for={task <- @tasks} id={"task-#{task.id}"} class="flex items-center justify-between p-2 border rounded-lg hover:bg-base-200">
+          <% task_form = Task.changeset(task, %{}) |> to_form() %>
+
+          <.form
+            for={task_form}
+            phx-change="toggle_complete"
+            phx-value-id={task.id}
+            class="flex items-center gap-2 flex-grow"
+          >
+            <.input type="checkbox" field={task_form[:completed]} class="checkbox checkbox-primary" />
+            <label class={
+               if task.completed,
+               do: "line-through text-gray-400 italic",
+               else: "text-gray-900 font-medium"
+              }>
+            <%= task.title %>
+            </label>
+          </.form>
+
+          <.button
+            type="button"
+            phx-click="delete"
+            phx-value-id={task.id}
+            class="btn btn-error btn-sm"
+          >
+            &times;
+          </.button>
+        </li>
+      </ul>
+    </div>
+    """
+  end
+
+  # ---------------------------
+  # Eventos
   # ---------------------------
   @impl true
   def handle_event("update_form", %{"title" => new_title}, socket) do
     {:noreply, assign(socket, new_task_title: new_title)}
   end
 
-  # ---------------------------
-  # Adicionar tarefa
-  # ---------------------------
   @impl true
   def handle_event("save_task", %{"title" => title}, socket) do
     if String.trim(title) == "" do
-      # Campo vazio → erro
       {:noreply, assign(socket, error_message: "can't be blank")}
     else
-      # Salva no banco e atualiza a lista
       changeset = Task.changeset(%Task{}, %{"title" => title})
-      
+
       case Repo.insert(changeset) do
         {:ok, task} ->
           socket =
@@ -47,7 +114,7 @@ defmodule ElixirTodoListWeb.TodoLive do
             |> update(:tasks, fn tasks -> tasks ++ [task] end)
             |> assign(new_task_title: "", error_message: nil)
 
-          {:noreply, put_flash(socket, :info, "Tarefa adicionada com sucesso!")}
+          {:noreply, assign(socket, info_message: "Tarefa adicionada com sucesso!")}
 
         {:error, _changeset} ->
           {:noreply, assign(socket, error_message: "Erro ao salvar tarefa")}
@@ -55,117 +122,38 @@ defmodule ElixirTodoListWeb.TodoLive do
     end
   end
 
-  # ---------------------------
-  # Excluir tarefa
-  # ---------------------------
-
   @impl true
-def handle_event("delete", %{"id" => id}, socket) do
-  id = String.to_integer(id)
-  task = Repo.get(Task, id)
-  if task, do: Repo.delete(task)
+  def handle_event("delete", %{"id" => id}, socket) do
+    id = String.to_integer(id)
+    task = Repo.get(Task, id)
+    if task, do: Repo.delete(task)
 
-  # Atualiza a lista e adiciona a mensagem
-  new_socket =
-    socket
-    |> update(:tasks, fn tasks -> Enum.reject(tasks, &(&1.id == id)) end)
-    |> assign(:info_message, "✅ Tarefa removida com sucesso!")
+    new_socket =
+      socket
+      |> update(:tasks, fn tasks -> Enum.reject(tasks, &(&1.id == id)) end)
+      |> assign(info_message: "✅ Tarefa removida com sucesso!")
 
-  # Agenda a limpeza da mensagem depois de 3 segundos
-  Process.send_after(self(), :clear_info_message, 3000)
-
-  {:noreply, new_socket}
-end
-
-   @impl true
-   def handle_info(:clear_info_message, socket) do
-    {:noreply, assign(socket, :info_message, nil)}
-   end
-
-   
-   @impl true
-def handle_event("toggle_complete", %{"id" => id, "task" => task_params}, socket) do
-  id = String.to_integer(id)
-  task = Repo.get(Task, id)
-
-  if task do
-    changeset = Task.changeset(task, %{"completed" => task_params["completed"] == "true"})
-    {:ok, _task} = Repo.update(changeset)
+    Process.send_after(self(), :clear_info_message, 3000)
+    {:noreply, new_socket}
   end
 
-  tasks = Repo.all(Task)
-  {:noreply, assign(socket, :tasks, tasks)}
-end
-
-
-  # ---------------------------
-  # Renderização da interface
-  # ---------------------------
   @impl true
-def render(assigns) do
-  ~H"""
-  <div class="w-full max-w-lg mx-auto mt-12 p-6 bg-white rounded-lg shadow-md">
-    <h1 class="text-3xl font-bold mb-6 text-center text-gray-800">
-      Minha Lista de Tarefas
-    </h1>
+  def handle_event("toggle_complete", %{"id" => id, "task" => task_params}, socket) do
+    id = String.to_integer(id)
+    task = Repo.get(Task, id)
 
-    <!-- Formulário -->
-    <form phx-submit="save_task" phx-change="update_form" class="flex gap-2 mb-2">
-      <input
-        type="text"
-        name="title"
-        value={@new_task_title}
-        placeholder="O que precisa ser feito?"
-        class="flex-grow p-2 border rounded"
-        autofocus
-      />
-      <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-        Adicionar
-      </button>
-    </form>
+    if task do
+      changeset = Task.changeset(task, %{"completed" => task_params["completed"] == "true"})
+      {:ok, _task} = Repo.update(changeset)
+    end
 
-    <!-- Mensagem de erro -->
-    <%= if @error_message do %>
-      <p class="text-red-600 mb-2"><%= @error_message %></p>
-    <% end %>
+    tasks = Repo.all(Task)
+    {:noreply, assign(socket, tasks: tasks)}
+  end
 
-    <!-- Mensagem temporária -->
-    <%= if @info_message do %>
-      <p class="text-green-600 font-semibold mb-2"><%= @info_message %></p>
-    <% end %>
-
-    <!-- Lista de tarefas -->
-    <ul class="space-y-2">
-      <li :for={task <- @tasks} id={"task-#{task.id}"} class="flex items-center justify-between gap-2 p-2 border rounded">
-        <% task_form = Task.changeset(task, %{}) |> to_form() %>
-
-        <.form
-          for={task_form}
-          phx-change="toggle_complete"
-          phx-value-id={task.id}
-          class="flex-grow flex items-center gap-2"
-        >
-          <.input
-            type="checkbox"
-            field={task_form[:completed]}
-          />
-          <label class={if task.completed, do: "line-through text-gray-400", else: "text-gray-900"}>
-            <%= task.title %>
-          </label>
-        </.form>
-
-        <.button
-          type="button"
-          phx-click="delete"
-          phx-value-id={task.id}
-          class="px-2 py-1 bg-red-500 text-white rounded hover:bg-red-700"
-        >
-          &times;
-        </.button>
-      </li>
-    </ul>
-  </div>
-  """
+  @impl true
+  def handle_info(:clear_info_message, socket) do
+    {:noreply, assign(socket, info_message: nil)}
+  end
 end
 
-end

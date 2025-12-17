@@ -1,30 +1,46 @@
-<h1>Lista de Tarefas</h1>
+<h1 class="text-2xl font-bold mb-4">Lista de Tarefas</h1>
 
-<form phx-submit="save">
+<form phx-submit="save" class="flex gap-2 mb-4">
   <input
     type="text"
     name="task[title]"
     value={@changeset.data.title}
     placeholder="Nova tarefa"
     autofocus
+    class="border rounded px-2 py-1 flex-1"
   />
-  <button type="submit">Adicionar</button>
-
-  <%= if @changeset.action do %>
-    <%= for {msg, _opts} <- Keyword.get_values(@changeset.errors, :title) do %>
-      <p style="color:red; margin: 4px 0;"><%= msg %></p>
-    <% end %>
-  <% end %>
+  <button type="submit" class="bg-blue-500 text-white px-4 py-1 rounded hover:bg-blue-600">
+    Adicionar
+  </button>
 </form>
+
+<%= if @changeset.action do %>
+  <%= for {msg, _opts} <- Keyword.get_values(@changeset.errors, :title) do %>
+    <p class="text-red-500 mb-2"><%= msg %></p>
+  <% end %>
+<% end %>
 
 <ul>
   <%= for task <- @tasks do %>
-    <li style="margin: 4px 0;">
-      <%= task.title %>
-<%= if task.completed do %>
-  - <span style="color: green;">Concluída</span>
-<% end %>
+    <li class="flex justify-between items-center p-2 border-b">
+      <span class={if task.completed, do: "line-through text-gray-500", else: "text-gray-900"}>
+        <%= task.title %>
+      </span>
 
+      <div class="flex items-center gap-2">
+        <%= if task.completed do %>
+          <span class="text-green-500 text-sm">Concluída</span>
+        <% end %>
+
+        <.button
+          type="button"
+          phx-click="delete"
+          phx-value-id={task.id}
+          class="!p-1 !bg-red-500 hover:!bg-red-700 text-white rounded"
+        >
+          &times;
+        </.button>
+      </div>
     </li>
   <% end %>
 </ul>
