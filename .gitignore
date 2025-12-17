@@ -1,0 +1,22 @@
+# .gitignore
+/_build
+/deps
+/priv/static/assets
+/node_modules
+/assets/node_modules
+*.log
+/config/dev.secret.exs
+.DS_Store
+.vscode/
+
+
+
+
+
+
+
+
+
+
+
+
