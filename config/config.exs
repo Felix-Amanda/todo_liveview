@@ -62,3 +62,10 @@ config :phoenix, :json_library, Jason
 # Import environment specific config. This must remain at the bottom
 # of this file so it overrides the configuration defined above.
 import_config "#{config_env()}.exs"
+
+# Configuração do Ecto / Banco de Dados (SQLite)
+config :elixir_todo_list, ElixirTodoList.Repo,
+  database: "elixir_todo_list.db",
+  priv: "priv/repo"
+
+config :elixir_todo_list, ecto_repos: [ElixirTodoList.Repo]

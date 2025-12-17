@@ -48,7 +48,14 @@ defmodule ElixirTodoList.MixProject do
       {:phoenix_live_dashboard, "~> 0.8.3"},
       {:esbuild, "~> 0.10", runtime: Mix.env() == :dev},
       {:tailwind, "~> 0.3", runtime: Mix.env() == :dev},
-      {:heroicons,
+     
+       # --- Ecto / Banco de dados ---
+      {:ecto, "~> 3.11"},
+      {:phoenix_ecto, "~> 4.6"},
+      {:ecto_sql, "~> 3.11"},
+      {:ecto_sqlite3, "~> 0.13"},
+
+       {:heroicons,
        github: "tailwindlabs/heroicons",
        tag: "v2.2.0",
        sparse: "optimized",

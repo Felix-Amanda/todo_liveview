@@ -8,6 +8,7 @@ defmodule ElixirTodoList.Application do
   @impl true
   def start(_type, _args) do
     children = [
+      ElixirTodoList.Repo,
       ElixirTodoListWeb.Telemetry,
       {DNSCluster, query: Application.get_env(:elixir_todo_list, :dns_cluster_query) || :ignore},
       {Phoenix.PubSub, name: ElixirTodoList.PubSub},
